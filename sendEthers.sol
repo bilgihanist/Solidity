@@ -54,10 +54,89 @@ contract Bank {
 fonksiyonlar için üst tarafta nitelendirilmesi gerekirken , kişisel adresler için parametre, input ve transferiçinde yazılabilir.*/
    }
 
+    function withdraw2() external {
+        payable(msg.sender).transfer(balances[msg.sender]);
+    }
+
+    function withdraw3(address payable to, uint amount) external {
+        require(balances[msg.sender] >= amount , "yeterli bakiye yoktur");
+        to.transfer(amount);
+        balances[msg.sender] -= amount;
+    }
+
+
+
+
    /*
-        3 Farklı ether gönderme yöntemi vardır.
-        1.) Transfer()
-            kontractta olmayan bir mikarı göndermek istersek, cüzdanda yeterli miktarda para yoksa 
+        ---3 Farklı ether gönderme yöntemi vardır.---
+
+        1.) Transfer() Revert
+            kontractta olmayan bir mikarı göndermek istersek, cüzdanda yeterli miktarda para yoksa yeterli miktarı göndermiyorsak 
+            bu geri dönüş(revert) yapar transfer keywordunun özelliği "Revert" yapamasıdır
    */ 
     
+
+    function withdraw4(address payable to, uint amount) external {
+        // require(balances[msg.sender]) >= amount, "yeterli bakiye yoktur";
+        to.transfer(amount);
+        balances[msg.sender] -= amount;
+    }
+
+
+    /* Send()
+    fonksiyon gerçekleştiyse true gerçekleşmezse false 
+    fonksiyonumzda bir işlemin gerçekleşip gerçekleşmediğini kontrol edeceksek send() özelliğini kullanırız.
+    
+    */
+
+
+    function withdraw5(address payable to, uint amount ) external returns(bool) {
+        bool ok = to.send(amount);
+        balances[msg.sender] -= amount;
+        return ok;
+    }
+
+
+    /* Call()
+    true ve false ile birlikte bize data gönderen bir fonksiyondur.
+    call 
+    
+    */
+
+    function withdrawCall(address payable to, uint amount) external returns(bool) {
+        //call bize 2 tane değer döndürüyor
+        //1.si bool özelliği 2.si ise data özelliği 
+    //(bool keyword, data keyword) = göndermek istediğimiz adres{göndermek istediğimiz miktar, gas ücreti belirtebiliyoruz}(data mesajı)
+        (bool sent,/* bytes memory data*/ ) = to.call{value: amount /*,gas:452221*/ } ("data burada"); 
+        balances[msg.sender] -= amount;
+        return sent; 
+    }
+ 
+
+// herhangi bir functionu çağırmadan kontracta ether göndermek için "Low Level İnteractions" CallData ile gönderilir.
+// bir kontracta ether göndemek istiyorsan "receive" ve "fallback" kullanmalısın 
+// hata almamak için  
+
+    uint public receiveCount = 0;
+    uint public fallbackCount = 0;
+    receive() external payable {
+        receiveCount +=1;
+    }
+
+    //fallback 
+    //eğer bir datamız varsa fallback çalışacaktır. veri gönderdiğimiz data gönderdiğimiz durumlarda işe yarar.
+
+    //fallback fonksiyonumuz yooken bir data göndermeye çalışırsak fullback function olmadığını göstren bir uyarı alırız.
+
+
+    //fallback ile gönmderilen verilerin gönderilecek veriler string değin "HEXADECIMAL" olarak gönderilmek zorundadır.
+    //kontrata direk ether göndermek istersek fallback ve receive fonksiyonlarının çalışması gerkiyor..
+    //data göndermiyorsak receive data gömnderiyorsak fallback fonksiyonu kullanılır.
+    //fallback hem veri içeren durumda hemde veri olamayan durumda çalışırken receive sadece veri olmayn durumda çalışır.
+
+    fallback() external payable {
+        fallbackCount +=1;
+    }
+
 }
+
